@@ -2,48 +2,49 @@ package server
 
 import (
 	"fmt"
-	"user-service/data-access/interfaces"
+	"log"
 	"user-service/server/controllers"
 	"user-service/server/routes"
-	"user-service/services"
-	"user-service/utils"
+	"user-service/services/auth"
+	"user-service/services/user"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type Server struct {
-	Port       int
-	Repository interfaces.Repository
+	Port        int
+	UserService user.IUserService
+	AuthService auth.IAuthService
 }
 
-func (s *Server) CreateServer() {
+func NewServer(port int, usrsrv user.IUserService, authsrv auth.IAuthService) *Server {
+	return &Server{port, usrsrv, authsrv}
+}
+
+func (s *Server) StartServer() error {
+	defer log.Println("Web server started")
+
 	app := fiber.New()
+	RegisterRoutes(app, s)
+	err := app.Listen(fmt.Sprintf(":%v", s.Port))
 
-	RegisterRoutes(app, s.Repository)
-
-	app.Listen(fmt.Sprintf(":%v", s.Port))
+	return err
 }
 
-func RegisterRoutes(app *fiber.App, repo interfaces.Repository) {
-	userService := services.UserService{
-		Repo: repo,
-	}
-	authService := services.AuthService{
-		JwtUtil: utils.JwtUtil{
-			SecretKey:       "emre",
-			ExpirationHours: 12,
-		},
+func RegisterRoutes(app *fiber.App, srv *Server) {
+	authController := controllers.AuthController{
+		AuthService: srv.AuthService,
 	}
 
-	controller := controllers.Controller{
-		UserService: userService,
-		AuthService: authService,
-	}
-	route := routes.Route{
-		Controller: controller,
-		App:        app,
+	userController := controllers.UserController{
+		UserService: srv.UserService,
 	}
 
-	route.UserRouteMapping()
-	route.AuthRouteMapping()
+	routes := routes.Route{
+		UserController: userController,
+		AuthController: authController,
+		App:            app,
+	}
+
+	routes.RouteMapping()
 }

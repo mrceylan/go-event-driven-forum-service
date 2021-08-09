@@ -2,30 +2,25 @@ package controllers
 
 import (
 	"user-service/constants"
-	"user-service/services"
+	"user-service/services/auth"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-type Controller struct {
-	UserService services.UserService
-	AuthService services.AuthService
+type AuthController struct {
+	AuthService auth.IAuthService
 }
 
-type Login struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
+func (ac *AuthController) Login(ctx *fiber.Ctx) error {
 
-type LoginResult struct {
-	AccessToken string `json:"access_token"`
-}
+	type Login struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 
-type ValidateTokenResult struct {
-	Id string `json:"id"`
-}
-
-func (ac *Controller) Login(ctx *fiber.Ctx) error {
+	type LoginResult struct {
+		AccessToken string `json:"access_token"`
+	}
 
 	login := &Login{}
 	err := ctx.BodyParser(&login)
@@ -34,13 +29,7 @@ func (ac *Controller) Login(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(err)
 	}
 
-	user, err := ac.UserService.CheckUserPassword(login.Email, login.Password)
-
-	if err != nil {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(err)
-	}
-
-	token, err := ac.AuthService.GenerateToken(user)
+	token, err := ac.AuthService.Login(ctx.Context(), login.Email, login.Password)
 
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(err)
@@ -52,7 +41,11 @@ func (ac *Controller) Login(ctx *fiber.Ctx) error {
 
 }
 
-func (ac *Controller) ValidateToken(ctx *fiber.Ctx) error {
+func (ac *AuthController) ValidateToken(ctx *fiber.Ctx) error {
+
+	type ValidateTokenResult struct {
+		Id string `json:"id"`
+	}
 
 	token := ctx.Get(constants.TOKEN_HEADER_NAME)
 

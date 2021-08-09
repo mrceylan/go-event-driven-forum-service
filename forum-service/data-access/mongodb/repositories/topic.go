@@ -10,6 +10,8 @@ import (
 )
 
 func (db *Database) SaveTopic(header string, userId string) (models.Topic, error) {
+	TopicCollection := db.GetTopicCollection()
+
 	userObjectId, err := primitive.ObjectIDFromHex(userId)
 	if err != nil {
 		log.Println("Invalid user id")
@@ -19,37 +21,38 @@ func (db *Database) SaveTopic(header string, userId string) (models.Topic, error
 		CreatedBy: userObjectId,
 	}
 
-	TopicCollection := db.GetTopicCollection()
-
 	insertResult, err := TopicCollection.InsertOne(db.Ctx, entity)
 
 	if err != nil {
 		return models.Topic{}, err
 	}
-	insertResult.InsertedID
-	u.Id = insertResult.InsertedID.(primitive.ObjectID).Hex()
 
-	return u, nil
+	return models.Topic{
+		Id:        insertResult.InsertedID.(primitive.ObjectID).Hex(),
+		Header:    header,
+		CreatedBy: userId,
+	}, nil
 }
 
-func (db *Database) GetUserById(id string) (models.User, error) {
-	UserCollection := db.GetUserCollection()
+func (db *Database) GetTopicById(id string) (models.Topic, error) {
+	TopicCollection := db.GetTopicCollection()
 
-	var entity schemas.User
+	var entity schemas.Topic
 
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		log.Println("Invalid id")
 	}
 
-	if err := UserCollection.FindOne(db.Ctx, bson.M{"_id": objectId}).Decode(&entity); err != nil {
-		return models.User{}, err
+	if err := TopicCollection.FindOne(db.Ctx, bson.M{"_id": objectId}).Decode(&entity); err != nil {
+		return models.Topic{}, err
 	}
 
-	return models.User{
-		Id:       entity.Id.Hex(),
-		UserName: entity.UserName,
-		Email:    entity.Email,
+	return models.Topic{
+		Id:         entity.Id.Hex(),
+		Header:     entity.Header,
+		CreatedBy:  entity.CreatedBy.Hex(),
+		CreateDate: entity.CreateDate,
 	}, nil
 
 }

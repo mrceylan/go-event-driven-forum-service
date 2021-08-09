@@ -1,6 +1,7 @@
-package repositories
+package repository
 
 import (
+	"context"
 	"log"
 	"user-service/data-access/mongodb/schemas"
 	"user-service/models"
@@ -9,16 +10,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (db *Database) SaveUser(u models.User, password string) (models.User, error) {
+func (cl *MongoClient) SaveUser(ctx context.Context, u models.User, password string) (models.User, error) {
 	entity := schemas.User{
 		UserName:     u.UserName,
 		Email:        u.Email,
 		PasswordHash: password,
 	}
 
-	UserCollection := db.GetUserCollection()
+	collection := cl.usersDatabase().usersCollection()
 
-	insertResult, err := UserCollection.InsertOne(db.Ctx, entity)
+	insertResult, err := collection.InsertOne(ctx, entity)
 
 	if err != nil {
 		return models.User{}, err
@@ -29,8 +30,8 @@ func (db *Database) SaveUser(u models.User, password string) (models.User, error
 	return u, nil
 }
 
-func (db *Database) GetUserById(id string) (models.User, error) {
-	UserCollection := db.GetUserCollection()
+func (cl *MongoClient) GetUserById(ctx context.Context, id string) (models.User, error) {
+	collection := cl.usersDatabase().usersCollection()
 
 	var entity schemas.User
 
@@ -39,7 +40,7 @@ func (db *Database) GetUserById(id string) (models.User, error) {
 		log.Println("Invalid id")
 	}
 
-	if err := UserCollection.FindOne(db.Ctx, bson.M{"_id": objectId}).Decode(&entity); err != nil {
+	if err := collection.FindOne(ctx, bson.M{"_id": objectId}).Decode(&entity); err != nil {
 		return models.User{}, err
 	}
 
@@ -51,12 +52,12 @@ func (db *Database) GetUserById(id string) (models.User, error) {
 
 }
 
-func (db *Database) GetUserByEmail(email string) (models.User, error) {
-	UserCollection := db.GetUserCollection()
+func (cl *MongoClient) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
+	collection := cl.usersDatabase().usersCollection()
 
 	var entity schemas.User
 
-	if err := UserCollection.FindOne(db.Ctx, bson.M{"email": email}).Decode(&entity); err != nil {
+	if err := collection.FindOne(ctx, bson.M{"email": email}).Decode(&entity); err != nil {
 		return models.User{}, err
 	}
 
@@ -68,8 +69,8 @@ func (db *Database) GetUserByEmail(email string) (models.User, error) {
 
 }
 
-func (db *Database) GetUserPasswordById(id string) string {
-	UserCollection := db.GetUserCollection()
+func (cl *MongoClient) GetUserPasswordById(ctx context.Context, id string) string {
+	collection := cl.usersDatabase().usersCollection()
 
 	var entity schemas.User
 
@@ -78,7 +79,7 @@ func (db *Database) GetUserPasswordById(id string) string {
 		log.Println("Invalid id")
 	}
 
-	if err := UserCollection.FindOne(db.Ctx, bson.M{"_id": objectId}).Decode(&entity); err != nil {
+	if err := collection.FindOne(ctx, bson.M{"_id": objectId}).Decode(&entity); err != nil {
 		return ""
 	}
 

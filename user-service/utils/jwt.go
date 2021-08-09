@@ -8,13 +8,17 @@ import (
 )
 
 type JwtUtil struct {
-	SecretKey       string
-	ExpirationHours int64
+	SecretKey         string
+	ExpirationMinutes int
+}
+
+func NewJwtUtil(secretKey string, expirationMinutes int) *JwtUtil {
+	return &JwtUtil{secretKey, expirationMinutes}
 }
 
 func (j *JwtUtil) GenerateToken(id string) (string, error) {
 	claims := &jwt.StandardClaims{
-		ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(j.ExpirationHours)).Unix(),
+		ExpiresAt: time.Now().Local().Add(time.Minute * time.Duration(j.ExpirationMinutes)).Unix(),
 		Id:        id,
 	}
 

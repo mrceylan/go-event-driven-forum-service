@@ -18,3 +18,13 @@ func (ts *TopicService) CreateTopic(header string, userId string) (models.Topic,
 
 	return model, nil
 }
+
+func (ts *TopicService) GetTopicById(id string) (models.Topic, error) {
+	model, err := ts.TopicRepo.GetTopicById(id)
+
+	if err != nil {
+		return models.Topic{}, err
+	}
+
+	return model, nil
+}
