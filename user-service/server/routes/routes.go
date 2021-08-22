@@ -12,6 +12,10 @@ type Route struct {
 	AuthController controllers.AuthController
 }
 
+func NewRoute(app *fiber.App, userController controllers.UserController, authController controllers.AuthController) *Route {
+	return &Route{app, userController, authController}
+}
+
 func (r *Route) RouteMapping() {
 	r.userRouteMapping()
 	r.authRouteMapping()

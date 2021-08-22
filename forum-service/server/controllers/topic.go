@@ -1,20 +1,27 @@
 package controllers
 
 import (
-	"forum-service/services"
+	"forum-service/models"
+	"forum-service/services/topic"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-type Controller struct {
-	TopicService services.TopicService
+type TopicController struct {
+	TopicService topic.ITopicService
 }
 
-type CreateTopic struct {
-	Header string `json:"header"`
+func NewTopicController(topicService topic.ITopicService) TopicController {
+	return TopicController{topicService}
 }
 
-func (uc *Controller) CreateTopic(ctx *fiber.Ctx) error {
+func (tc *TopicController) CreateTopic(ctx *fiber.Ctx) error {
+	type CreateTopic struct {
+		Header string `json:"header"`
+		UserId string `json:"userId"`
+	}
+
 	topic := &CreateTopic{}
 
 	err := ctx.BodyParser(&topic)
@@ -23,7 +30,12 @@ func (uc *Controller) CreateTopic(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(nil)
 	}
 
-	result, err := uc.TopicService.CreateTopic(topic.Header, "")
+	result, err := tc.TopicService.CreateTopic(ctx.Context(),
+		models.Topic{
+			Header:     topic.Header,
+			CreateDate: time.Now(),
+			CreatedBy:  topic.UserId,
+		})
 
 	if err != nil {
 		return err
@@ -32,11 +44,24 @@ func (uc *Controller) CreateTopic(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusCreated).JSON(result)
 }
 
-func (uc *Controller) GetTopic(ctx *fiber.Ctx) error {
+func (tc *TopicController) GetTopic(ctx *fiber.Ctx) error {
 
 	id := ctx.Params("id")
 
-	result, err := uc.TopicService.GetTopicById(id)
+	result, err := tc.TopicService.GetTopicById(ctx.Context(), id)
+
+	if err != nil {
+		return err
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(result)
+}
+
+func (tc *TopicController) GetTopicMessages(ctx *fiber.Ctx) error {
+
+	id := ctx.Params("id")
+
+	result, err := tc.TopicService.GetTopicMessages(ctx.Context(), id)
 
 	if err != nil {
 		return err

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"forum-service/data-access/mongodb/schemas"
 	"forum-service/models"
 	"log"
@@ -9,33 +10,32 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (db *Database) SaveTopic(header string, userId string) (models.Topic, error) {
-	TopicCollection := db.GetTopicCollection()
+func (cl *MongoClient) SaveTopic(ctx context.Context, model models.Topic) (models.Topic, error) {
+	TopicCollection := cl.forumDatabase().topicsCollection()
 
-	userObjectId, err := primitive.ObjectIDFromHex(userId)
+	userObjectId, err := primitive.ObjectIDFromHex(model.CreatedBy)
 	if err != nil {
 		log.Println("Invalid user id")
 	}
 	entity := schemas.Topic{
-		Header:    header,
-		CreatedBy: userObjectId,
+		Header:     model.Header,
+		CreatedBy:  userObjectId,
+		CreateDate: model.CreateDate,
 	}
 
-	insertResult, err := TopicCollection.InsertOne(db.Ctx, entity)
+	insertResult, err := TopicCollection.InsertOne(ctx, entity)
 
 	if err != nil {
 		return models.Topic{}, err
 	}
 
-	return models.Topic{
-		Id:        insertResult.InsertedID.(primitive.ObjectID).Hex(),
-		Header:    header,
-		CreatedBy: userId,
-	}, nil
+	model.Id = insertResult.InsertedID.(primitive.ObjectID).Hex()
+
+	return model, nil
 }
 
-func (db *Database) GetTopicById(id string) (models.Topic, error) {
-	TopicCollection := db.GetTopicCollection()
+func (cl *MongoClient) GetTopicById(ctx context.Context, id string) (models.Topic, error) {
+	TopicCollection := cl.forumDatabase().topicsCollection()
 
 	var entity schemas.Topic
 
@@ -44,7 +44,7 @@ func (db *Database) GetTopicById(id string) (models.Topic, error) {
 		log.Println("Invalid id")
 	}
 
-	if err := TopicCollection.FindOne(db.Ctx, bson.M{"_id": objectId}).Decode(&entity); err != nil {
+	if err := TopicCollection.FindOne(ctx, bson.M{"_id": objectId}).Decode(&entity); err != nil {
 		return models.Topic{}, err
 	}
 

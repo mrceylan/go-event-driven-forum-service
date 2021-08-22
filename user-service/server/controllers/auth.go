@@ -11,6 +11,10 @@ type AuthController struct {
 	AuthService auth.IAuthService
 }
 
+func NewAuthController(authService auth.IAuthService) AuthController {
+	return AuthController{authService}
+}
+
 func (ac *AuthController) Login(ctx *fiber.Ctx) error {
 
 	type Login struct {

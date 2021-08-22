@@ -22,29 +22,21 @@ func NewServer(port int, usrsrv user.IUserService, authsrv auth.IAuthService) *S
 }
 
 func (s *Server) StartServer() error {
-	defer log.Println("Web server started")
 
 	app := fiber.New()
 	RegisterRoutes(app, s)
+	log.Println("Web server started..")
 	err := app.Listen(fmt.Sprintf(":%v", s.Port))
 
 	return err
 }
 
 func RegisterRoutes(app *fiber.App, srv *Server) {
-	authController := controllers.AuthController{
-		AuthService: srv.AuthService,
-	}
+	authController := controllers.NewAuthController(srv.AuthService)
 
-	userController := controllers.UserController{
-		UserService: srv.UserService,
-	}
+	userController := controllers.NewUserController(srv.UserService)
 
-	routes := routes.Route{
-		UserController: userController,
-		AuthController: authController,
-		App:            app,
-	}
+	routes := routes.NewRoute(app, userController, authController)
 
 	routes.RouteMapping()
 }

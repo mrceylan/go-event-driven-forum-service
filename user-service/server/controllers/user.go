@@ -11,6 +11,10 @@ type UserController struct {
 	UserService user.IUserService
 }
 
+func NewUserController(userService user.IUserService) UserController {
+	return UserController{userService}
+}
+
 func (uc *UserController) CreateUser(ctx *fiber.Ctx) error {
 	type CreateUser struct {
 		UserName string `json:"userName"`

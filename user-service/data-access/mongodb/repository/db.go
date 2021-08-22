@@ -4,8 +4,10 @@ import (
 	"context"
 	"log"
 	"time"
+	"user-service/constants"
 	dataaccess "user-service/data-access"
 
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -33,7 +35,7 @@ func NewMongoDb(conn string, timeOut int) (dataaccess.IDatabase, error) {
 }
 
 func (cl *MongoClient) usersDatabase() *MongoDb {
-	return &MongoDb{cl.Client.Database("UserService")}
+	return &MongoDb{cl.Client.Database(viper.GetString(constants.MONGO_DB_NAME))}
 }
 
 func (db *MongoDb) usersCollection() *mongo.Collection {
