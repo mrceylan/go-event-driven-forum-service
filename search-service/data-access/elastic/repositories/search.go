@@ -85,6 +85,8 @@ func (cl *ElasticClient) SearchMessages(ctx context.Context, searchString string
 		}
 	}
 
+	log.Println(res)
+
 	var entities []schemas.Message
 
 	if err := json.NewDecoder(res.Body).Decode(&entities); err != nil {
