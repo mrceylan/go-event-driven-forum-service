@@ -7,7 +7,7 @@ import (
 
 type IDatabase interface {
 	SaveMessage(ctx context.Context, model models.Message) error
-	SearchMessages(ctx context.Context, searchString string) ([]models.Message, error)
+	SearchMessages(ctx context.Context, searchString string) ([]models.MessageSearchResult, error)
 
 	Disconnect(timeOut int) error
 }

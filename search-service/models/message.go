@@ -5,3 +5,6 @@ type Message struct {
 	TopicId string
 	Message string
 }
+type MessageSearchResult struct {
+	Id string
+}

@@ -44,7 +44,7 @@ func (cl *ElasticClient) SaveMessage(ctx context.Context, message models.Message
 	return nil
 }
 
-func (cl *ElasticClient) SearchMessages(ctx context.Context, searchString string) ([]models.Message, error) {
+func (cl *ElasticClient) SearchMessages(ctx context.Context, searchString string) ([]models.MessageSearchResult, error) {
 
 	var buf bytes.Buffer
 	query := map[string]interface{}{
@@ -85,18 +85,20 @@ func (cl *ElasticClient) SearchMessages(ctx context.Context, searchString string
 		}
 	}
 
-	log.Println(res)
+	var searchResult ElasticSearchResult
 
-	var entities []schemas.Message
-
-	if err := json.NewDecoder(res.Body).Decode(&entities); err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&searchResult); err != nil {
 		return nil, err
 	}
 
-	var result []models.Message
+	var result []models.MessageSearchResult
 
-	for _, entity := range entities {
-		result = append(result, entity.MapToModel())
+	for _, sr := range searchResult.Hits.Hits {
+		var entity schemas.Message
+		if err := json.Unmarshal(sr.Source, &entity); err != nil {
+			return nil, err
+		}
+		result = append(result, entity.MapToSearcResultModel())
 	}
 
 	return result, nil

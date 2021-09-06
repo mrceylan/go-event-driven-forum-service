@@ -8,7 +8,7 @@ import (
 
 type ISearchService interface {
 	SaveMessage(ctx context.Context, message models.Message) error
-	SearchMessages(ctx context.Context, searchString string) ([]models.Message, error)
+	SearchMessages(ctx context.Context, searchString string) ([]models.MessageSearchResult, error)
 }
 
 type SearchService struct {
@@ -29,7 +29,7 @@ func (ss *SearchService) SaveMessage(ctx context.Context, model models.Message) 
 	return nil
 }
 
-func (ss *SearchService) SearchMessages(ctx context.Context, searchString string) ([]models.Message, error) {
+func (ss *SearchService) SearchMessages(ctx context.Context, searchString string) ([]models.MessageSearchResult, error) {
 	result, err := ss.Database.SearchMessages(ctx, searchString)
 
 	if err != nil {

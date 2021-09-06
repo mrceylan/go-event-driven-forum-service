@@ -16,6 +16,12 @@ func (ms *Message) MapToModel() models.Message {
 	}
 }
 
+func (ms *Message) MapToSearcResultModel() models.MessageSearchResult {
+	return models.MessageSearchResult{
+		Id: ms.Id,
+	}
+}
+
 func (ms *Message) MapFromModel(model models.Message) {
 
 	ms.TopicId = model.TopicId

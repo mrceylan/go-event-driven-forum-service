@@ -12,11 +12,12 @@ type IMessageService interface {
 }
 
 type MessageService struct {
-	Database dataaccess.IDatabase
+	Database       dataaccess.IDatabase
+	PublishChannel chan<- models.PublishEvent
 }
 
-func Activate(db dataaccess.IDatabase) IMessageService {
-	return &MessageService{db}
+func Activate(db dataaccess.IDatabase, publishChannel chan<- models.PublishEvent) IMessageService {
+	return &MessageService{db, publishChannel}
 }
 
 func (ms *MessageService) SaveMessage(ctx context.Context, model models.Message) (models.Message, error) {
@@ -25,6 +26,8 @@ func (ms *MessageService) SaveMessage(ctx context.Context, model models.Message)
 	if err != nil {
 		return models.Message{}, err
 	}
+
+	ms.PublishChannel <- models.PublishEvent{Topic: "deneme", Event: model}
 
 	return model, nil
 }
