@@ -37,5 +37,6 @@ func (r *Route) messageRouteMapping() {
 	userApp := r.App.Group("/message")
 
 	userApp.Post("", r.MessageController.SaveMessage)
+	userApp.Delete("/:id", r.MessageController.DeleteMessage)
 	userApp.Get("/:id", r.MessageController.GetMessageById)
 }

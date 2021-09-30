@@ -2,19 +2,16 @@ package rabbitmq
 
 import (
 	"log"
-	"search-service/services/search"
 
 	"github.com/streadway/amqp"
 )
 
 type RabbitMqServerSettings struct {
-	ServerUrl     string
-	SearchService search.ISearchService
+	ServerUrl string
 }
 
 type RabbitMqServer struct {
-	Conn          *amqp.Connection
-	SearchService search.ISearchService
+	Conn *amqp.Connection
 }
 
 func NewRabbitMqServer(settings RabbitMqServerSettings) (*RabbitMqServer, error) {
@@ -23,7 +20,7 @@ func NewRabbitMqServer(settings RabbitMqServerSettings) (*RabbitMqServer, error)
 	if err != nil {
 		return nil, err
 	}
-	return &RabbitMqServer{connectRabbitMQ, settings.SearchService}, nil
+	return &RabbitMqServer{connectRabbitMQ}, nil
 }
 
 func (c *RabbitMqServer) Disconnect() error {

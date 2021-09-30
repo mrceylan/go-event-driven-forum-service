@@ -8,6 +8,7 @@ import (
 
 type ISearchService interface {
 	SaveMessage(ctx context.Context, message models.Message) error
+	DeleteMessage(ctx context.Context, id string) error
 	SearchMessages(ctx context.Context, searchString string) ([]models.MessageSearchResult, error)
 }
 
@@ -21,6 +22,16 @@ func Activate(db dataaccess.IDatabase) ISearchService {
 
 func (ss *SearchService) SaveMessage(ctx context.Context, model models.Message) error {
 	err := ss.Database.SaveMessage(ctx, model)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ss *SearchService) DeleteMessage(ctx context.Context, id string) error {
+	err := ss.Database.DeleteMessage(ctx, id)
 
 	if err != nil {
 		return err

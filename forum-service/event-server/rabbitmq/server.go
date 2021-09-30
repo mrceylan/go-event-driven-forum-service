@@ -1,20 +1,18 @@
 package rabbitmq
 
 import (
-	"forum-service/models"
 	"log"
 
 	"github.com/streadway/amqp"
 )
 
 type RabbitMqServerSettings struct {
-	ServerUrl      string
-	PublishChannel <-chan models.PublishEvent
+	ServerUrl string
 }
 
 type RabbitMqServer struct {
-	Conn           *amqp.Connection
-	PublishChannel <-chan models.PublishEvent
+	Conn    *amqp.Connection
+	Channel *amqp.Channel
 }
 
 func NewRabbitMqServer(settings RabbitMqServerSettings) (*RabbitMqServer, error) {
@@ -23,30 +21,33 @@ func NewRabbitMqServer(settings RabbitMqServerSettings) (*RabbitMqServer, error)
 	if err != nil {
 		return nil, err
 	}
-	declareQueues(connectRabbitMQ)
-	return &RabbitMqServer{connectRabbitMQ, settings.PublishChannel}, nil
+	channel, err := connectRabbitMQ.Channel()
+	if err != nil {
+		return nil, err
+	}
+
+	server := &RabbitMqServer{connectRabbitMQ, channel}
+
+	return server, nil
 }
 
-func (c *RabbitMqServer) Disconnect() error {
-	err := c.Conn.Close()
+func (srv *RabbitMqServer) Disconnect() error {
+	err := srv.Conn.Close()
 	return err
 }
 
-func declareQueues(conn *amqp.Connection) error {
-	channel, err := conn.Channel()
-	if err != nil {
-		return err
-	}
-	_, err = channel.QueueDeclare(
-		"deneme", // name
-		false,    // durable
-		false,    // delete when unused
-		false,    // exclusive
-		false,    // no-wait
-		nil,      // arguments
+func (srv *RabbitMqServer) DeclareQueue(queue string) error {
+	_, err := srv.Channel.QueueDeclare(
+		queue, // name
+		false, // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,   // arguments
 	)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

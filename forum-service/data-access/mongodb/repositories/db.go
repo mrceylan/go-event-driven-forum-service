@@ -34,15 +34,15 @@ func NewMongoDb(conn string, timeOut int) (dataaccess.IDatabase, error) {
 	return &MongoClient{client}, nil
 }
 
-func (cl *MongoClient) forumDatabase() *MongoDb {
-	return &MongoDb{cl.Client.Database(viper.GetString(constants.MONGO_DB_NAME))}
+func (cl *MongoClient) getForumDatabase() MongoDb {
+	return MongoDb{cl.Client.Database(viper.GetString(constants.MONGO_DB_NAME))}
 }
 
-func (db *MongoDb) topicsCollection() *mongo.Collection {
+func (db MongoDb) getTopicsCollection() *mongo.Collection {
 	return db.Database.Collection("Topics")
 }
 
-func (db *MongoDb) messagesCollection() *mongo.Collection {
+func (db MongoDb) getMessagesCollection() *mongo.Collection {
 	return db.Database.Collection("Messages")
 }
 

@@ -46,6 +46,19 @@ func (mc *MessageController) SaveMessage(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusCreated).JSON(result)
 }
 
+func (mc *MessageController) DeleteMessage(ctx *fiber.Ctx) error {
+
+	id := ctx.Params("id")
+
+	err := mc.MessageService.DeleteMessage(ctx.Context(), id)
+
+	if err != nil {
+		return err
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON("OK")
+}
+
 func (mc *MessageController) GetMessageById(ctx *fiber.Ctx) error {
 
 	id := ctx.Params("id")

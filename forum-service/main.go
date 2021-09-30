@@ -5,7 +5,7 @@ import (
 	dataaccess "forum-service/data-access"
 	"forum-service/data-access/mongodb/repositories"
 	eventserver "forum-service/event-server"
-	"forum-service/models"
+	"forum-service/event-server/rabbitmq"
 	"forum-service/server"
 	"forum-service/services/message"
 	"forum-service/services/topic"
@@ -15,6 +15,7 @@ import (
 )
 
 var db dataaccess.IDatabase
+var eventServer eventserver.IEventServer
 
 func main() {
 	initConfig()
@@ -34,12 +35,14 @@ func initConfig() {
 }
 
 func initApp() error {
-	publishChannel := make(chan models.PublishEvent, 100)
-	topicSrv, messageSrv, err := initServices(publishChannel)
+	err := initEventServer()
 	if err != nil {
 		return err
 	}
-	err = initEventServer(eventserver.EventServerSettings{PublishChannel: publishChannel})
+	topicSrv, messageSrv, err := initServices()
+	if err != nil {
+		return err
+	}
 	if err != nil {
 		return err
 	}
@@ -50,14 +53,14 @@ func initApp() error {
 	return err
 }
 
-func initServices(publishChannel chan<- models.PublishEvent) (topic.ITopicService, message.IMessageService, error) {
+func initServices() (topic.ITopicService, message.IMessageService, error) {
 	var err error
 	db, err = repositories.NewMongoDb(viper.GetString(constants.MONGO_CONNECTION), viper.GetInt(constants.MONGO_CONNECTION_TIMEOUT))
 	if err != nil {
 		return nil, nil, err
 	}
 	topicSrv := topic.Activate(db)
-	messageSrv := message.Activate(db, publishChannel)
+	messageSrv := message.Activate(db, eventServer)
 	return topicSrv, messageSrv, nil
 }
 
@@ -67,15 +70,27 @@ func initWebServer(topicSrv topic.ITopicService, messageSrv message.IMessageServ
 	return err
 }
 
-func initEventServer(settings eventserver.EventServerSettings) error {
-	srv, err := eventserver.NewEventServer(settings)
+func initEventServer() error {
+	settings := rabbitmq.RabbitMqServerSettings{
+		ServerUrl: viper.GetString(constants.RABBITMQ_CONNECTION),
+	}
+	var err error
+	eventServer, err = rabbitmq.NewRabbitMqServer(settings)
 	if err != nil {
 		return err
 	}
-	go srv.StartPublisher()
+	err = eventServer.DeclareQueue(viper.GetString(constants.MESSAGE_CREATED_QUEUE))
+	if err != nil {
+		return err
+	}
+	err = eventServer.DeclareQueue(viper.GetString(constants.MESSAGE_DELETED_QUEUE))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func closeConnections() {
 	db.Disconnect(viper.GetInt(constants.MONGO_DISCONNECT_TIMEOUT))
+	eventServer.Disconnect()
 }

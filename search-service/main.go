@@ -5,7 +5,8 @@ import (
 	"search-service/constants"
 	dataaccess "search-service/data-access"
 	"search-service/data-access/elastic/repositories"
-	eventserver "search-service/event-server"
+	"search-service/event-server/events"
+	"search-service/event-server/rabbitmq"
 	"search-service/server"
 	"search-service/services/search"
 
@@ -36,7 +37,10 @@ func initApp() error {
 	if err != nil {
 		return err
 	}
-	err = initEventServer(eventserver.EventServerSettings{SearchService: searchSrv})
+	err = initEventServer(searchSrv)
+	if err != nil {
+		return err
+	}
 	err = initWebServer(searchSrv)
 	return err
 }
@@ -61,12 +65,17 @@ func initWebServer(searchSrv search.ISearchService) error {
 	return err
 }
 
-func initEventServer(settings eventserver.EventServerSettings) error {
-	srv, err := eventserver.NewEventServer(settings)
+func initEventServer(searchSrv search.ISearchService) error {
+	srv, err := rabbitmq.NewRabbitMqServer(rabbitmq.RabbitMqServerSettings{
+		ServerUrl: viper.GetString(constants.RABBITMQ_CONNECTION),
+	})
 	if err != nil {
 		return err
 	}
-	go srv.StartConsumer()
+
+	go events.MessageCreatedEvent{EventServer: srv, SearchService: searchSrv}.SubscribeToEvents()
+	go events.MessageDeletedEvent{EventServer: srv, SearchService: searchSrv}.SubscribeToEvents()
+
 	return nil
 }
 

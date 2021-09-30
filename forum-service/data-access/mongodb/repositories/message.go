@@ -3,8 +3,8 @@ package repositories
 import (
 	"context"
 	"forum-service/data-access/mongodb/schemas"
+	"forum-service/data-access/mongodb/utils"
 	"forum-service/models"
-	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -12,10 +12,11 @@ import (
 )
 
 func (cl *MongoClient) SaveMessage(ctx context.Context, message models.Message) (models.Message, error) {
-	MessageCollection := cl.forumDatabase().messagesCollection()
+	MessageCollection := cl.getForumDatabase().getMessagesCollection()
 
 	var entity schemas.Message
 	err := entity.MapFromModel(message)
+	entity.IsDeleted = false
 
 	if err != nil {
 		return models.Message{}, err
@@ -32,14 +33,37 @@ func (cl *MongoClient) SaveMessage(ctx context.Context, message models.Message) 
 	return message, nil
 }
 
+func (cl *MongoClient) DeleteMessage(ctx context.Context, id string) error {
+	MessageCollection := cl.getForumDatabase().getMessagesCollection()
+
+	objectId, err := utils.ConvertStringToObjectId(id)
+	if err != nil {
+		return err
+	}
+
+	_, err = MessageCollection.UpdateOne(
+		ctx,
+		bson.M{"_id": objectId},
+		bson.D{
+			{"$set", bson.D{{"isDeleted", true}}},
+		},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (cl *MongoClient) GetMessageById(ctx context.Context, id string) (models.Message, error) {
-	MessageCollection := cl.forumDatabase().messagesCollection()
+	MessageCollection := cl.getForumDatabase().getMessagesCollection()
 
 	var entity schemas.Message
 
-	objectId, err := primitive.ObjectIDFromHex(id)
+	objectId, err := utils.ConvertStringToObjectId(id)
 	if err != nil {
-		log.Println("Invalid id")
+		return models.Message{}, err
 	}
 
 	if err := MessageCollection.FindOne(ctx, bson.M{"_id": objectId}).Decode(&entity); err != nil {
@@ -51,13 +75,13 @@ func (cl *MongoClient) GetMessageById(ctx context.Context, id string) (models.Me
 }
 
 func (cl *MongoClient) GetTopicMessages(ctx context.Context, id string) ([]models.Message, error) {
-	MessageCollection := cl.forumDatabase().messagesCollection()
+	MessageCollection := cl.getForumDatabase().getMessagesCollection()
 
 	var result []models.Message
 
-	objectId, err := primitive.ObjectIDFromHex(id)
+	objectId, err := utils.ConvertStringToObjectId(id)
 	if err != nil {
-		log.Println("Invalid id")
+		return []models.Message{}, err
 	}
 
 	var cursor *mongo.Cursor

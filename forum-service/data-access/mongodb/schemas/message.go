@@ -1,8 +1,8 @@
 package schemas
 
 import (
+	"forum-service/data-access/mongodb/utils"
 	"forum-service/models"
-	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -14,6 +14,7 @@ type Message struct {
 	Message    string             `bson:"message,omitempty"`
 	CreateDate time.Time          `bson:"createDate,omitempty"`
 	CreatedBy  primitive.ObjectID `bson:"createdBy,omitempty"`
+	IsDeleted  bool               `bson:"isDeleted,omitempty"`
 }
 
 func (ms *Message) MapToModel() models.Message {
@@ -28,19 +29,19 @@ func (ms *Message) MapToModel() models.Message {
 
 func (ms *Message) MapFromModel(model models.Message) error {
 
-	userObjectId, err := primitive.ObjectIDFromHex(model.CreatedBy)
+	userObjectId, err := utils.ConvertStringToObjectId(model.CreatedBy)
 	if err != nil {
-		log.Println("Invalid user id")
+		return err
 	}
-	topicId, err := primitive.ObjectIDFromHex(model.TopicId)
+	topicId, err := utils.ConvertStringToObjectId(model.TopicId)
 	if err != nil {
-		log.Println("Invalid topic id")
+		return err
 	}
 
 	if model.Id != "" {
-		id, err := primitive.ObjectIDFromHex(model.Id)
+		id, err := utils.ConvertStringToObjectId(model.Id)
 		if err != nil {
-			log.Println("Invalid message id")
+			return err
 		}
 		ms.Id = id
 	}

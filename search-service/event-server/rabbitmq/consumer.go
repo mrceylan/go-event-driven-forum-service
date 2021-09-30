@@ -2,19 +2,17 @@ package rabbitmq
 
 import (
 	"context"
-	"encoding/json"
 	"log"
-	"search-service/models"
 )
 
-func (srv *RabbitMqServer) StartConsumer() {
+func (srv *RabbitMqServer) StartConsumer(queue string, ch chan<- []byte, ctx context.Context) {
 	logger := log.Default()
 	eventChannel, err := srv.Conn.Channel()
 	if err != nil {
-		logger.Print(err)
+		logger.Println(err)
 	}
 	msgs, err := eventChannel.Consume(
-		"deneme",
+		queue,
 		"",
 		true,
 		false,
@@ -23,24 +21,11 @@ func (srv *RabbitMqServer) StartConsumer() {
 		nil,
 	)
 	if err != nil {
-		logger.Print(err)
+		logger.Println(err)
 	}
 
-	forever := make(chan bool)
-	ctx := context.Background()
-	go func() {
-		for d := range msgs {
-			var model models.Message
-			if err := json.Unmarshal(d.Body, &model); err != nil {
-				logger.Print(err)
-			}
-			err = srv.SearchService.SaveMessage(ctx, model)
-			if err != nil {
-				logger.Print(err)
-			}
-		}
-	}()
+	for d := range msgs {
+		ch <- d.Body
+	}
 
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
-	<-forever
 }

@@ -38,7 +38,29 @@ func (cl *ElasticClient) SaveMessage(ctx context.Context, message models.Message
 	defer res.Body.Close()
 
 	if res.IsError() {
-		log.Printf("[%s] Error indexing document ID=%d", res.Status(), entity.Id)
+		log.Printf("[%s] Error indexing document ID=%s", res.Status(), entity.Id)
+	}
+
+	return nil
+}
+
+func (cl *ElasticClient) DeleteMessage(ctx context.Context, id string) error {
+
+	req := esapi.DeleteRequest{
+		Index:        messageIndex(),
+		DocumentType: "_doc",
+		DocumentID:   id,
+	}
+
+	res, err := req.Do(ctx, cl.Client)
+
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		log.Printf("[%s] Error deleting document ID=%s", res.Status(), id)
 	}
 
 	return nil
