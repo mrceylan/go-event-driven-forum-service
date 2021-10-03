@@ -44,7 +44,6 @@ func (ms MessageCreatedEvent) SubscribeToEvents() {
 		if err := json.Unmarshal(event, &payload); err != nil {
 			log.Println(err)
 		}
-		log.Println(event)
 		err := ms.SearchService.SaveMessage(ctx, payload.mapToModel())
 		log.Println(err)
 	}

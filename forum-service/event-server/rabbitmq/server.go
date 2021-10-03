@@ -38,12 +38,12 @@ func (srv *RabbitMqServer) Disconnect() error {
 
 func (srv *RabbitMqServer) DeclareQueue(queue string) error {
 	_, err := srv.Channel.QueueDeclare(
-		queue, // name
-		false, // durable
-		false, // delete when unused
-		false, // exclusive
-		false, // no-wait
-		nil,   // arguments
+		queue,
+		false,
+		false,
+		false,
+		false,
+		nil,
 	)
 	if err != nil {
 		return err
